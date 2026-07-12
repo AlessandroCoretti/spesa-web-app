@@ -52,6 +52,12 @@ create table if not exists items (
   updated_at timestamptz not null default now()
 );
 
+-- Fase 0: campi per statistiche, previsioni consumi e note segrete.
+alter table items add column if not exists created_by uuid references profiles(id);
+alter table items add column if not exists stockout_history jsonb not null default '[]'::jsonb;
+alter table items add column if not exists secret_note text;
+alter table items add column if not exists secret_note_author_id uuid references profiles(id);
+
 create table if not exists invites (
   code text primary key default substr(md5(random()::text), 1, 8),
   list_id uuid not null references lists(id) on delete cascade,
@@ -61,6 +67,24 @@ create table if not exists invites (
   max_uses integer,
   use_count integer not null default 0
 );
+
+-- Fase 4: budget condiviso con split personalizzato per spesa.
+create table if not exists expenses (
+  id uuid primary key,
+  list_id uuid not null references lists(id) on delete cascade,
+  description text not null,
+  amount numeric not null,
+  paid_by uuid not null references profiles(id),
+  expense_date timestamptz not null default now(),
+  splits jsonb not null default '[]'::jsonb,
+  note text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_expenses_updated_at on expenses;
+create trigger trg_expenses_updated_at before update on expenses
+  for each row execute function set_updated_at();
 
 -- ============================================================
 -- updated_at trigger (server-side clock, used for last-write-wins)
@@ -113,40 +137,57 @@ alter table list_members enable row level security;
 alter table categories enable row level security;
 alter table items enable row level security;
 alter table invites enable row level security;
+alter table expenses enable row level security;
 
 -- profiles: read/update only your own row
+drop policy if exists "own profile read" on profiles;
 create policy "own profile read" on profiles for select using (id = auth.uid());
+drop policy if exists "own profile update" on profiles;
 create policy "own profile update" on profiles for update using (id = auth.uid());
 
 -- lists: member read; owner insert/update/delete
+drop policy if exists "member read lists" on lists;
 create policy "member read lists" on lists for select
   using (exists (select 1 from list_members m where m.list_id = lists.id and m.user_id = auth.uid()));
+drop policy if exists "owner insert list" on lists;
 create policy "owner insert list" on lists for insert
   with check (owner_id = auth.uid());
+drop policy if exists "owner update list" on lists;
 create policy "owner update list" on lists for update
   using (owner_id = auth.uid());
+drop policy if exists "owner delete list" on lists;
 create policy "owner delete list" on lists for delete
   using (owner_id = auth.uid());
 
 -- list_members: members can read the membership of lists they belong to.
 -- No insert/update/delete policy for regular clients: the only way to join
 -- is the accept_invite() function below (security definer).
+drop policy if exists "member read members" on list_members;
 create policy "member read members" on list_members for select
   using (exists (select 1 from list_members m2 where m2.list_id = list_members.list_id and m2.user_id = auth.uid()));
 
 -- categories / items: full read+write for list members
+drop policy if exists "member rw categories" on categories;
 create policy "member rw categories" on categories for all
   using (exists (select 1 from list_members m where m.list_id = categories.list_id and m.user_id = auth.uid()))
   with check (exists (select 1 from list_members m where m.list_id = categories.list_id and m.user_id = auth.uid()));
 
+drop policy if exists "member rw items" on items;
 create policy "member rw items" on items for all
   using (exists (select 1 from list_members m where m.list_id = items.list_id and m.user_id = auth.uid()))
   with check (exists (select 1 from list_members m where m.list_id = items.list_id and m.user_id = auth.uid()));
 
+drop policy if exists "member rw expenses" on expenses;
+create policy "member rw expenses" on expenses for all
+  using (exists (select 1 from list_members m where m.list_id = expenses.list_id and m.user_id = auth.uid()))
+  with check (exists (select 1 from list_members m where m.list_id = expenses.list_id and m.user_id = auth.uid()));
+
 -- invites: any authenticated user can look up an invite by code (needed to
 -- resolve /join/:code); only members of a list can create invites for it.
+drop policy if exists "authenticated read invite" on invites;
 create policy "authenticated read invite" on invites for select
   using (auth.role() = 'authenticated');
+drop policy if exists "member create invite" on invites;
 create policy "member create invite" on invites for insert
   with check (exists (select 1 from list_members m where m.list_id = invites.list_id and m.user_id = auth.uid()));
 
@@ -219,6 +260,33 @@ grant execute on function delete_own_account() to authenticated;
 -- Realtime: make sure the tables broadcast changes
 -- ============================================================
 
-alter publication supabase_realtime add table lists;
-alter publication supabase_realtime add table categories;
-alter publication supabase_realtime add table items;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'lists'
+  ) then
+    alter publication supabase_realtime add table lists;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'categories'
+  ) then
+    alter publication supabase_realtime add table categories;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'items'
+  ) then
+    alter publication supabase_realtime add table items;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'expenses'
+  ) then
+    alter publication supabase_realtime add table expenses;
+  end if;
+end $$;

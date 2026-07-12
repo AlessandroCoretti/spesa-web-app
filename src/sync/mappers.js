@@ -10,6 +10,10 @@ export function itemToRow(item) {
     status: item.status,
     note: item.note,
     quantity: item.quantity,
+    created_by: item.createdBy ?? null,
+    stockout_history: item.stockoutHistory ?? [],
+    secret_note: item.secretNote ?? null,
+    secret_note_author_id: item.secretNoteAuthorId ?? null,
   }
 }
 
@@ -22,6 +26,10 @@ export function rowToItem(row) {
     status: row.status,
     note: row.note,
     quantity: row.quantity,
+    createdBy: row.created_by ?? null,
+    stockoutHistory: row.stockout_history ?? [],
+    secretNote: row.secret_note ?? null,
+    secretNoteAuthorId: row.secret_note_author_id ?? null,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
   }
@@ -58,6 +66,34 @@ export function listToRow(list) {
     name: list.name,
     icon: list.icon,
     color: list.color,
+  }
+}
+
+export function expenseToRow(expense) {
+  return {
+    id: expense.id,
+    list_id: expense.listId,
+    description: expense.description,
+    amount: expense.amount,
+    paid_by: expense.paidBy,
+    expense_date: new Date(expense.date).toISOString(),
+    splits: expense.splits ?? [],
+    note: expense.note ?? '',
+  }
+}
+
+export function rowToExpense(row) {
+  return {
+    id: row.id,
+    listId: row.list_id,
+    description: row.description,
+    amount: row.amount,
+    paidBy: row.paid_by,
+    date: new Date(row.expense_date).getTime(),
+    splits: row.splits ?? [],
+    note: row.note ?? '',
+    createdAt: new Date(row.created_at).getTime(),
+    updatedAt: new Date(row.updated_at).getTime(),
   }
 }
 

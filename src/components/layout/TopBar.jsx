@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router'
-import { ChevronDown, Settings } from 'lucide-react'
+import { ChefHat, ChevronDown, Settings, TrendingDown } from 'lucide-react'
 import { useStore } from '../../store'
 
 export function TopBar() {
@@ -17,13 +17,29 @@ export function TopBar() {
         <span>{list?.name ?? 'Your Lists'}</span>
         <ChevronDown className="h-4 w-4" />
       </button>
-      <Link
-        to={`/list/${listId}/settings`}
-        className="grid h-9 w-9 place-items-center rounded-full bg-white/70 text-blush-600 shadow-sm active:scale-95 transition-transform"
-        aria-label="Impostazioni lista"
-      >
-        <Settings className="h-5 w-5" />
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          to={`/list/${listId}/previsioni`}
+          className="grid h-9 w-9 place-items-center rounded-full bg-white/70 text-lilac-500 shadow-sm active:scale-95 transition-transform"
+          aria-label="Previsioni"
+        >
+          <TrendingDown className="h-5 w-5" />
+        </Link>
+        <Link
+          to={`/list/${listId}/ricette`}
+          className="grid h-9 w-9 place-items-center rounded-full bg-white/70 text-peach-500 shadow-sm active:scale-95 transition-transform"
+          aria-label="Salva Cena"
+        >
+          <ChefHat className="h-5 w-5" />
+        </Link>
+        <Link
+          to={`/list/${listId}/settings`}
+          className="grid h-9 w-9 place-items-center rounded-full bg-white/70 text-blush-600 shadow-sm active:scale-95 transition-transform"
+          aria-label="Impostazioni lista"
+        >
+          <Settings className="h-5 w-5" />
+        </Link>
+      </div>
     </header>
   )
 }

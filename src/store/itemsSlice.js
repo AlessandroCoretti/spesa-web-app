@@ -3,6 +3,8 @@ import { generateId } from '../utils/id'
 import { enqueuePush } from '../sync/pushQueue'
 import { itemToRow } from '../sync/mappers'
 
+const MAX_STOCKOUT_HISTORY = 10
+
 function pushIfCloud(get, listId, op, payload) {
   const list = get().lists[listId]
   if (list?.mode === 'cloud') {
@@ -19,7 +21,23 @@ export const createItemsSlice = (set, get) => ({
     }
     const id = generateId()
     const now = Date.now()
-    const item = { id, listId, categoryId, name, status, note, quantity, createdAt: now, updatedAt: now }
+    const list = get().lists[listId]
+    const createdBy = list?.mode === 'cloud' ? (get().session?.user?.id ?? null) : null
+    const item = {
+      id,
+      listId,
+      categoryId,
+      name,
+      status,
+      note,
+      quantity,
+      createdBy,
+      stockoutHistory: [],
+      secretNote: null,
+      secretNoteAuthorId: null,
+      createdAt: now,
+      updatedAt: now,
+    }
     set((state) => ({ items: { ...state.items, [id]: item } }))
     pushIfCloud(get, listId, 'upsert', itemToRow(item))
     return id
@@ -31,8 +49,13 @@ export const createItemsSlice = (set, get) => ({
     }
     let updated
     set((state) => {
-      if (!state.items[id]) return state
-      updated = { ...state.items[id], ...updates, updatedAt: Date.now() }
+      const current = state.items[id]
+      if (!current) return state
+      let stockoutHistory = current.stockoutHistory ?? []
+      if (updates.status === 'esaurito' && current.status !== 'esaurito') {
+        stockoutHistory = [...stockoutHistory, Date.now()].slice(-MAX_STOCKOUT_HISTORY)
+      }
+      updated = { ...current, ...updates, stockoutHistory, updatedAt: Date.now() }
       return { items: { ...state.items, [id]: updated } }
     })
     if (updated) pushIfCloud(get, updated.listId, 'upsert', itemToRow(updated))
@@ -40,6 +63,11 @@ export const createItemsSlice = (set, get) => ({
 
   setItemStatus: (id, status) => {
     get().updateItem(id, { status })
+  },
+
+  setSecretNote: (id, secretNote) => {
+    const authorId = get().session?.user?.id ?? null
+    get().updateItem(id, { secretNote, secretNoteAuthorId: secretNote ? authorId : null })
   },
 
   deleteItem: (id) => {

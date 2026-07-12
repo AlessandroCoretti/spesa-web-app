@@ -6,6 +6,7 @@ import { createCategoriesSlice } from './categoriesSlice'
 import { createItemsSlice } from './itemsSlice'
 import { createUiSlice } from './uiSlice'
 import { createAuthSlice } from './authSlice'
+import { createExpensesSlice } from './expensesSlice'
 
 export const useStore = create(
   persist(
@@ -15,6 +16,7 @@ export const useStore = create(
       ...createItemsSlice(set, get, api),
       ...createUiSlice(set, get, api),
       ...createAuthSlice(set, get, api),
+      ...createExpensesSlice(set, get, api),
     }),
     {
       name: 'dispensa-store',
@@ -26,6 +28,7 @@ export const useStore = create(
         categories: state.categories,
         items: state.items,
         staleReminderShownDates: state.staleReminderShownDates,
+        expenses: state.expenses,
       }),
     }
   )

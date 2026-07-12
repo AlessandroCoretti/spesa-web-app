@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { ChevronLeft, Download, LogIn, LogOut, Share2, Tag, Trash2, UserX } from 'lucide-react'
+import { BarChart3, ChevronLeft, Download, LogIn, LogOut, Share2, Tag, Trash2, UserX, Wallet } from 'lucide-react'
 import { useStore } from '../store'
 import { useInstallPrompt } from '../hooks/useInstallPrompt'
 import { detectPlatform } from '../utils/platform'
@@ -101,6 +101,26 @@ export default function ListSettingsView() {
           <Share2 className="h-5 w-5 text-mint-500" />
           <span className="font-semibold text-ink">Condividi lista</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => navigate(`/list/${listId}/statistiche`)}
+          className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+        >
+          <BarChart3 className="h-5 w-5 text-lilac-500" />
+          <span className="font-semibold text-ink">Statistiche</span>
+        </button>
+
+        {list?.mode === 'cloud' && (
+          <button
+            type="button"
+            onClick={() => navigate(`/list/${listId}/budget`)}
+            className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+          >
+            <Wallet className="h-5 w-5 text-peach-500" />
+            <span className="font-semibold text-ink">Budget condiviso</span>
+          </button>
+        )}
 
         {installed ? (
           <div className="flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-3.5 text-left">
