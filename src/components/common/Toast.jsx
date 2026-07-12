@@ -8,7 +8,7 @@ export function Toast() {
 
   useEffect(() => {
     if (!toast) return
-    const timer = setTimeout(() => clearToast(), 2200)
+    const timer = setTimeout(() => clearToast(), toast.action ? 5000 : 2200)
     return () => clearTimeout(timer)
   }, [toast, clearToast])
 
@@ -22,9 +22,21 @@ export function Toast() {
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: -20, opacity: 0, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white shadow-(--shadow-soft-lg)"
+            className="pointer-events-auto flex items-center gap-3 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white shadow-(--shadow-soft-lg)"
           >
-            {toast.message}
+            <span>{toast.message}</span>
+            {toast.action && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.action.onClick()
+                  clearToast()
+                }}
+                className="shrink-0 rounded-full bg-white/20 px-3 py-1 text-xs font-bold"
+              >
+                {toast.action.label}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

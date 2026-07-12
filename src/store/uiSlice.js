@@ -4,9 +4,15 @@ export const createUiSlice = (set, get) => ({
   toast: null,
   activeSheet: null,
   editingItemId: null,
+  staleReminderShownDates: {},
 
-  showToast: (message) => {
-    set({ toast: { id: generateId(), message } })
+  markStaleReminderShown: (listId, dateKey) =>
+    set((state) => ({
+      staleReminderShownDates: { ...state.staleReminderShownDates, [listId]: dateKey },
+    })),
+
+  showToast: (message, { action } = {}) => {
+    set({ toast: { id: generateId(), message, action } })
   },
   clearToast: () => set({ toast: null }),
 

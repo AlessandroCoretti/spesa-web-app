@@ -3,10 +3,14 @@ import { TopBar } from './TopBar'
 import { BottomNav } from './BottomNav'
 import { ListSwitcherSheet } from '../lists/ListSwitcherSheet'
 import { ItemFormSheet } from '../items/ItemFormSheet'
-import { Toast } from '../common/Toast'
 import { InstallPrompt } from '../pwa/InstallPrompt'
+import { useStaleStockReminder } from '../../hooks/useStaleStockReminder'
+import { useCloudSync } from '../../hooks/useCloudSync'
 
 export function AppShell() {
+  useStaleStockReminder()
+  useCloudSync()
+
   return (
     <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-blush-50/40">
       <TopBar />
@@ -16,7 +20,6 @@ export function AppShell() {
       <BottomNav />
       <ListSwitcherSheet />
       <ItemFormSheet />
-      <Toast />
       <InstallPrompt />
     </div>
   )

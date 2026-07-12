@@ -1,4 +1,6 @@
 import { generateId } from '../utils/id'
+import { enqueuePush } from '../sync/pushQueue'
+import { listToRow } from '../sync/mappers'
 
 const DEFAULT_LIST_ID = generateId()
 
@@ -10,6 +12,8 @@ export const createListsSlice = (set, get) => ({
       icon: 'home',
       color: 'blush',
       shareCode: null,
+      mode: 'local',
+      ownerId: null,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     },
@@ -23,7 +27,17 @@ export const createListsSlice = (set, get) => ({
     set((state) => ({
       lists: {
         ...state.lists,
-        [id]: { id, name, icon, color, shareCode: null, createdAt: now, updatedAt: now },
+        [id]: {
+          id,
+          name,
+          icon,
+          color,
+          shareCode: null,
+          mode: 'local',
+          ownerId: null,
+          createdAt: now,
+          updatedAt: now,
+        },
       },
       listOrder: [...state.listOrder, id],
       activeListId: id,
@@ -32,18 +46,19 @@ export const createListsSlice = (set, get) => ({
   },
 
   renameList: (id, name) => {
+    let updated
     set((state) => {
       if (!state.lists[id]) return state
-      return {
-        lists: {
-          ...state.lists,
-          [id]: { ...state.lists[id], name, updatedAt: Date.now() },
-        },
-      }
+      updated = { ...state.lists[id], name, updatedAt: Date.now() }
+      return { lists: { ...state.lists, [id]: updated } }
     })
+    if (updated?.mode === 'cloud') {
+      enqueuePush({ table: 'lists', op: 'upsert', payload: listToRow(updated) })
+    }
   },
 
   deleteList: (id) => {
+    const list = get().lists[id]
     set((state) => {
       const { [id]: _removed, ...remainingLists } = state.lists
       const listOrder = state.listOrder.filter((listId) => listId !== id)
@@ -59,6 +74,9 @@ export const createListsSlice = (set, get) => ({
 
       return { lists: remainingLists, listOrder, categories, items, activeListId }
     })
+    if (list?.mode === 'cloud') {
+      enqueuePush({ table: 'lists', op: 'delete', payload: { id } })
+    }
   },
 
   setActiveList: (id) => {
@@ -106,6 +124,8 @@ export const createListsSlice = (set, get) => ({
             icon: listData.icon ?? 'home',
             color: listData.color ?? 'blush',
             shareCode: null,
+            mode: 'local',
+            ownerId: null,
             createdAt: now,
             updatedAt: now,
           },
@@ -117,5 +137,24 @@ export const createListsSlice = (set, get) => ({
       }
     })
     return id
+  },
+
+  // Replaces/inserts a fully-formed cloud list (with its categories/items)
+  // into local state — used both when upgrading a local list to cloud and
+  // when joining someone else's shared list via an invite link.
+  mergeCloudList: ({ list, categories = [], items = [] }) => {
+    set((state) => ({
+      lists: { ...state.lists, [list.id]: list },
+      listOrder: state.listOrder.includes(list.id) ? state.listOrder : [...state.listOrder, list.id],
+      categories: {
+        ...state.categories,
+        ...Object.fromEntries(categories.map((c) => [c.id, c])),
+      },
+      items: {
+        ...state.items,
+        ...Object.fromEntries(items.map((i) => [i.id, i])),
+      },
+      activeListId: list.id,
+    }))
   },
 })

@@ -10,7 +10,8 @@
       "Bash(sed -i \"s/localhost:5174/localhost:5180/\" verify.js)",
       "Bash(node debug.js)",
       "Bash(node verify-share.js)",
-      "Bash(node verify-settings.js)"
+      "Bash(node verify-settings.js)",
+      "Bash(node verify-sync.js)"
     ]
   }
 }
