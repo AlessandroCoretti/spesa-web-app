@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Read(//tmp/**)",
+      "Bash(timeout 150 npx playwright install chromium)",
+      "Bash(node verify.js)",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Select-Object Id,ProcessName\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://192.168.1.16:5180/)",
+      "Bash(sed -i \"s/localhost:5174/localhost:5180/\" verify.js)",
+      "Bash(node debug.js)",
+      "Bash(node verify-share.js)"
+    ]
+  }
+}

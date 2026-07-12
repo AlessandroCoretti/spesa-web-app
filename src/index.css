@@ -1,0 +1,80 @@
+@import 'tailwindcss';
+@import '@fontsource/baloo-2/400.css';
+@import '@fontsource/baloo-2/600.css';
+@import '@fontsource/baloo-2/700.css';
+@import '@fontsource/nunito/400.css';
+@import '@fontsource/nunito/600.css';
+@import '@fontsource/nunito/800.css';
+
+@theme {
+  --font-heading: 'Baloo 2', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  /* Pastel pink — brand */
+  --color-blush-50: #fff5f8;
+  --color-blush-100: #ffe8f0;
+  --color-blush-200: #ffd1e2;
+  --color-blush-300: #ffb0cd;
+  --color-blush-400: #fb8bb4;
+  --color-blush-500: #f4629a;
+  --color-blush-600: #e14580;
+  --color-blush-700: #b8306a;
+
+  /* Secondary pastel accents */
+  --color-lilac-50: #f6f3ff;
+  --color-lilac-100: #ece4ff;
+  --color-lilac-200: #dcccff;
+  --color-lilac-300: #c3aaff;
+  --color-lilac-400: #a984f7;
+  --color-lilac-500: #9066e0;
+
+  --color-mint-50: #f1fbf6;
+  --color-mint-100: #dcf6e8;
+  --color-mint-200: #b9edd2;
+  --color-mint-300: #8ddfb4;
+  --color-mint-400: #5ecb95;
+  --color-mint-500: #3aad78;
+
+  --color-peach-50: #fff6ee;
+  --color-peach-100: #ffe8d3;
+  --color-peach-200: #ffd0a8;
+  --color-peach-300: #ffb37a;
+  --color-peach-400: #fb9455;
+  --color-peach-500: #ec7735;
+
+  --color-coral-50: #fff1f0;
+  --color-coral-100: #ffdedb;
+  --color-coral-200: #ffbbb4;
+  --color-coral-300: #ff9187;
+  --color-coral-400: #f96a5d;
+  --color-coral-500: #e14a3c;
+
+  --color-ink: #4a3446;
+  --color-ink-soft: #8a7186;
+
+  --shadow-soft: 0 8px 24px -8px rgba(225, 69, 128, 0.28);
+  --shadow-soft-lg: 0 16px 40px -12px rgba(225, 69, 128, 0.32);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: linear-gradient(180deg, var(--color-blush-50) 0%, #fffdfe 45%);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-heading);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -1,0 +1,85 @@
+import { useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import { ChevronLeft, Share2, Tag, Trash2 } from 'lucide-react'
+import { useStore } from '../store'
+import { CategoryManagerSheet } from '../components/categories/CategoryManagerSheet'
+import { ShareSheet } from '../components/sharing/ShareSheet'
+import { DeleteConfirmDialog } from '../components/items/DeleteConfirmDialog'
+
+export default function ListSettingsView() {
+  const { listId } = useParams()
+  const navigate = useNavigate()
+  const list = useStore((state) => state.lists[listId])
+  const listOrder = useStore((state) => state.listOrder)
+  const deleteList = useStore((state) => state.deleteList)
+  const showToast = useStore((state) => state.showToast)
+
+  const [showCategories, setShowCategories] = useState(false)
+  const [showShare, setShowShare] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  const canDelete = listOrder.length > 1
+
+  const handleDelete = () => {
+    deleteList(listId);
+    const remaining = listOrder.filter((id) => id !== listId)
+    showToast('Lista eliminata')
+    navigate(`/list/${remaining[0]}/da_comprare`)
+  }
+
+  return (
+    <div className="flex min-h-dvh flex-col">
+      <header className="flex items-center gap-2 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <button
+          type="button"
+          onClick={() => navigate(`/list/${listId}/da_comprare`)}
+          className="grid h-9 w-9 place-items-center rounded-full bg-blush-50 text-blush-600"
+          aria-label="Indietro"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <h1 className="font-heading text-xl font-semibold text-blush-700">{list?.name}</h1>
+      </header>
+
+      <div className="flex flex-col gap-2.5 px-4">
+        <button
+          type="button"
+          onClick={() => setShowCategories(true)}
+          className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+        >
+          <Tag className="h-5 w-5 text-lilac-500" />
+          <span className="font-semibold text-ink">Gestisci categorie</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowShare(true)}
+          className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+        >
+          <Share2 className="h-5 w-5 text-mint-500" />
+          <span className="font-semibold text-ink">Condividi lista</span>
+        </button>
+
+        {canDelete && (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+          >
+            <Trash2 className="h-5 w-5 text-coral-500" />
+            <span className="font-semibold text-coral-600">Elimina questa lista</span>
+          </button>
+        )}
+      </div>
+
+      <CategoryManagerSheet open={showCategories} onClose={() => setShowCategories(false)} />
+      <ShareSheet open={showShare} onClose={() => setShowShare(false)} />
+      <DeleteConfirmDialog
+        open={confirmingDelete}
+        itemName={list?.name}
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={handleDelete}
+      />
+    </div>
+  )
+}
