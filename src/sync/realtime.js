@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { useStore } from '../store'
-import { rowToItem, rowToCategory, rowToExpense, rowToFolder } from './mappers'
+import { rowToItem, rowToCategory, rowToExpense, rowToSubList } from './mappers'
 
 let channel = null
 let currentListId = null
@@ -30,8 +30,8 @@ export function subscribeToList(listId) {
     )
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'folders', filter: `list_id=eq.${listId}` },
-      handleFolderChange
+      { event: '*', schema: 'public', table: 'sub_lists', filter: `list_id=eq.${listId}` },
+      handleSubListChange
     )
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') reconcile(listId)
@@ -73,12 +73,12 @@ function handleExpenseChange(payload) {
   }
 }
 
-function handleFolderChange(payload) {
-  const { applyRemoteFolder, removeRemoteFolder } = useStore.getState()
+function handleSubListChange(payload) {
+  const { applyRemoteSubList, removeRemoteSubList } = useStore.getState()
   if (payload.eventType === 'DELETE') {
-    removeRemoteFolder(payload.old.id)
+    removeRemoteSubList(payload.old.id)
   } else {
-    applyRemoteFolder(rowToFolder(payload.new))
+    applyRemoteSubList(rowToSubList(payload.new))
   }
 }
 
@@ -104,6 +104,6 @@ async function reconcile(listId) {
   const { data: expenses } = await supabase.from('expenses').select('*').eq('list_id', listId)
   expenses?.forEach((row) => state.applyRemoteExpense(rowToExpense(row)))
 
-  const { data: folders } = await supabase.from('folders').select('*').eq('list_id', listId)
-  folders?.forEach((row) => state.applyRemoteFolder(rowToFolder(row)))
+  const { data: subLists } = await supabase.from('sub_lists').select('*').eq('list_id', listId)
+  subLists?.forEach((row) => state.applyRemoteSubList(rowToSubList(row)))
 }

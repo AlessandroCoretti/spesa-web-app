@@ -35,7 +35,7 @@ export const createItemsSlice = (set, get) => ({
       stockoutHistory: [],
       secretNote: null,
       secretNoteAuthorId: null,
-      folderId: null,
+      subListId: null,
       order: now,
       createdAt: now,
       updatedAt: now,

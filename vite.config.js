@@ -14,7 +14,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       strategies: 'generateSW',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'cover.webp'],
       manifest: {
         name: 'Your Lists',
         short_name: 'Your Lists',
@@ -24,6 +24,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         icons: [
+          { src: 'cover.webp', sizes: '364x253', type: 'image/webp', purpose: 'any' },
           { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
           { src: 'favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
         ],

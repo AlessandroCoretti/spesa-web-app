@@ -10,30 +10,56 @@ import { SecretNoteBadge } from './SecretNoteBadge'
 const SWIPE_LEFT_THRESHOLD = -80
 const SWIPE_RIGHT_THRESHOLD = 80
 const TAP_SUPPRESS_DISTANCE = 8
+const AXIS_LOCK_DISTANCE = 6
 
-export function ItemCard({ item }) {
+export function ItemCard({ item, onReorderDragStart, onReorderDrag, onReorderDragEnd }) {
   const openSheet = useStore((state) => state.openSheet)
   const deleteItem = useStore((state) => state.deleteItem)
   const setItemStatus = useStore((state) => state.setItemStatus)
   const showToast = useStore((state) => state.showToast)
   const [confirming, setConfirming] = useState(false)
+  const [isReordering, setIsReordering] = useState(false)
   const draggedRef = useRef(false)
+  const axisRef = useRef(null)
   const meta = STATUS_META[item.status]
   const tokens = colorTokens(meta.color)
-  const isInCasa = item.status === 'in_casa'
+  const canSwipeToBuy = item.status !== 'da_comprare'
+
+  const handleDragStart = () => {
+    axisRef.current = null
+    onReorderDragStart?.()
+  }
+
+  const handleDrag = (_, info) => {
+    if (!axisRef.current) {
+      if (Math.abs(info.offset.x) > AXIS_LOCK_DISTANCE || Math.abs(info.offset.y) > AXIS_LOCK_DISTANCE) {
+        axisRef.current = Math.abs(info.offset.x) > Math.abs(info.offset.y) ? 'x' : 'y'
+        if (axisRef.current === 'y') setIsReordering(true)
+      }
+    }
+    if (axisRef.current === 'y') {
+      onReorderDrag?.(info)
+    }
+  }
 
   const handleDragEnd = (_, info) => {
-    if (Math.abs(info.offset.x) > TAP_SUPPRESS_DISTANCE) {
+    if (Math.abs(info.offset.x) > TAP_SUPPRESS_DISTANCE || Math.abs(info.offset.y) > TAP_SUPPRESS_DISTANCE) {
       draggedRef.current = true
     }
-    if (info.offset.x < SWIPE_LEFT_THRESHOLD) {
-      setConfirming(true)
-    } else if (isInCasa && info.offset.x > SWIPE_RIGHT_THRESHOLD) {
-      setItemStatus(item.id, 'da_comprare')
-      showToast(`"${item.name}" spostato in Da comprare`, {
-        action: { label: 'Annulla', onClick: () => setItemStatus(item.id, 'in_casa') },
-      })
+    if (axisRef.current === 'x') {
+      if (info.offset.x < SWIPE_LEFT_THRESHOLD) {
+        setConfirming(true)
+      } else if (canSwipeToBuy && info.offset.x > SWIPE_RIGHT_THRESHOLD) {
+        const previousStatus = item.status
+        setItemStatus(item.id, 'da_comprare')
+        showToast(`"${item.name}" spostato in Da comprare`, {
+          action: { label: 'Annulla', onClick: () => setItemStatus(item.id, previousStatus) },
+        })
+      }
     }
+    onReorderDragEnd?.(info)
+    axisRef.current = null
+    setIsReordering(false)
   }
 
   const handleTap = () => {
@@ -52,20 +78,26 @@ export function ItemCard({ item }) {
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-2xl">
-        <div className="absolute inset-0 flex items-center justify-between text-white">
-          <div className={`flex h-full flex-1 items-center pl-5 ${isInCasa ? 'bg-mint-400' : 'bg-transparent'}`}>
-            {isInCasa && <ShoppingCart className="h-5 w-5" />}
+      <div className="relative rounded-2xl">
+        {isReordering ? (
+          <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-blush-200 bg-blush-50/60" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-between overflow-hidden rounded-2xl text-white">
+            <div className={`flex h-full flex-1 items-center pl-5 ${canSwipeToBuy ? 'bg-mint-400' : 'bg-transparent'}`}>
+              {canSwipeToBuy && <ShoppingCart className="h-5 w-5" />}
+            </div>
+            <div className="flex h-full items-center bg-coral-400 pr-5">
+              <Trash2 className="h-5 w-5" />
+            </div>
           </div>
-          <div className="flex h-full items-center bg-coral-400 pr-5">
-            <Trash2 className="h-5 w-5" />
-          </div>
-        </div>
+        )}
         <motion.button
           type="button"
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={{ left: 0.6, right: isInCasa ? 0.6 : 0 }}
+          drag
+          dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+          dragElastic={{ left: 0.6, right: canSwipeToBuy ? 0.6 : 0, top: 1, bottom: 1 }}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
           onDragEnd={handleDragEnd}
           onTap={handleTap}
           initial={{ opacity: 0, y: 8 }}
