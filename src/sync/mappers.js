@@ -14,6 +14,8 @@ export function itemToRow(item) {
     stockout_history: item.stockoutHistory ?? [],
     secret_note: item.secretNote ?? null,
     secret_note_author_id: item.secretNoteAuthorId ?? null,
+    folder_id: item.folderId ?? null,
+    order: item.order ?? 0,
   }
 }
 
@@ -30,6 +32,30 @@ export function rowToItem(row) {
     stockoutHistory: row.stockout_history ?? [],
     secretNote: row.secret_note ?? null,
     secretNoteAuthorId: row.secret_note_author_id ?? null,
+    folderId: row.folder_id ?? null,
+    order: row.order ?? 0,
+    createdAt: new Date(row.created_at).getTime(),
+    updatedAt: new Date(row.updated_at).getTime(),
+  }
+}
+
+export function folderToRow(folder) {
+  return {
+    id: folder.id,
+    list_id: folder.listId,
+    category_id: folder.categoryId,
+    name: folder.name,
+    order: folder.order ?? 0,
+  }
+}
+
+export function rowToFolder(row) {
+  return {
+    id: row.id,
+    listId: row.list_id,
+    categoryId: row.category_id,
+    name: row.name,
+    order: row.order ?? 0,
     createdAt: new Date(row.created_at).getTime(),
     updatedAt: new Date(row.updated_at).getTime(),
   }

@@ -2,6 +2,18 @@
 -- Run this once in the Supabase SQL Editor (Project -> SQL Editor -> New query).
 
 -- ============================================================
+-- updated_at trigger function (defined first: tables below reference it)
+-- ============================================================
+
+create or replace function set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+-- ============================================================
 -- Tables
 -- ============================================================
 
@@ -58,6 +70,20 @@ alter table items add column if not exists stockout_history jsonb not null defau
 alter table items add column if not exists secret_note text;
 alter table items add column if not exists secret_note_author_id uuid references profiles(id);
 
+-- Cartelle stile Android (drag-and-drop di un item su un altro) e ordinamento manuale.
+create table if not exists folders (
+  id uuid primary key,
+  list_id uuid not null references lists(id) on delete cascade,
+  category_id uuid references categories(id) on delete cascade,
+  name text not null default 'Nuova cartella',
+  "order" numeric not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table items add column if not exists folder_id uuid references folders(id) on delete set null;
+alter table items add column if not exists "order" numeric not null default 0;
+
 create table if not exists invites (
   code text primary key default substr(md5(random()::text), 1, 8),
   list_id uuid not null references lists(id) on delete cascade,
@@ -82,21 +108,9 @@ create table if not exists expenses (
   updated_at timestamptz not null default now()
 );
 
-drop trigger if exists trg_expenses_updated_at on expenses;
-create trigger trg_expenses_updated_at before update on expenses
-  for each row execute function set_updated_at();
-
 -- ============================================================
--- updated_at trigger (server-side clock, used for last-write-wins)
+-- updated_at triggers (all tables exist by this point)
 -- ============================================================
-
-create or replace function set_updated_at()
-returns trigger language plpgsql as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
 
 drop trigger if exists trg_lists_updated_at on lists;
 create trigger trg_lists_updated_at before update on lists
@@ -108,6 +122,14 @@ create trigger trg_categories_updated_at before update on categories
 
 drop trigger if exists trg_items_updated_at on items;
 create trigger trg_items_updated_at before update on items
+  for each row execute function set_updated_at();
+
+drop trigger if exists trg_folders_updated_at on folders;
+create trigger trg_folders_updated_at before update on folders
+  for each row execute function set_updated_at();
+
+drop trigger if exists trg_expenses_updated_at on expenses;
+create trigger trg_expenses_updated_at before update on expenses
   for each row execute function set_updated_at();
 
 -- ============================================================
@@ -138,6 +160,7 @@ alter table categories enable row level security;
 alter table items enable row level security;
 alter table invites enable row level security;
 alter table expenses enable row level security;
+alter table folders enable row level security;
 
 -- profiles: read/update only your own row
 drop policy if exists "own profile read" on profiles;
@@ -181,6 +204,11 @@ drop policy if exists "member rw expenses" on expenses;
 create policy "member rw expenses" on expenses for all
   using (exists (select 1 from list_members m where m.list_id = expenses.list_id and m.user_id = auth.uid()))
   with check (exists (select 1 from list_members m where m.list_id = expenses.list_id and m.user_id = auth.uid()));
+
+drop policy if exists "member rw folders" on folders;
+create policy "member rw folders" on folders for all
+  using (exists (select 1 from list_members m where m.list_id = folders.list_id and m.user_id = auth.uid()))
+  with check (exists (select 1 from list_members m where m.list_id = folders.list_id and m.user_id = auth.uid()));
 
 -- invites: any authenticated user can look up an invite by code (needed to
 -- resolve /join/:code); only members of a list can create invites for it.
@@ -288,5 +316,12 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'expenses'
   ) then
     alter publication supabase_realtime add table expenses;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'folders'
+  ) then
+    alter publication supabase_realtime add table folders;
   end if;
 end $$;

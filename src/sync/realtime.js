@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient'
 import { useStore } from '../store'
-import { rowToItem, rowToCategory, rowToExpense } from './mappers'
+import { rowToItem, rowToCategory, rowToExpense, rowToFolder } from './mappers'
 
 let channel = null
 let currentListId = null
@@ -27,6 +27,11 @@ export function subscribeToList(listId) {
       'postgres_changes',
       { event: '*', schema: 'public', table: 'expenses', filter: `list_id=eq.${listId}` },
       handleExpenseChange
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'folders', filter: `list_id=eq.${listId}` },
+      handleFolderChange
     )
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') reconcile(listId)
@@ -68,6 +73,15 @@ function handleExpenseChange(payload) {
   }
 }
 
+function handleFolderChange(payload) {
+  const { applyRemoteFolder, removeRemoteFolder } = useStore.getState()
+  if (payload.eventType === 'DELETE') {
+    removeRemoteFolder(payload.old.id)
+  } else {
+    applyRemoteFolder(rowToFolder(payload.new))
+  }
+}
+
 // Supabase Realtime doesn't replay events missed while disconnected, so on
 // every (re)connect we fetch anything newer than what we already have and
 // merge it through the same last-write-wins path as live events.
@@ -89,4 +103,7 @@ async function reconcile(listId) {
 
   const { data: expenses } = await supabase.from('expenses').select('*').eq('list_id', listId)
   expenses?.forEach((row) => state.applyRemoteExpense(rowToExpense(row)))
+
+  const { data: folders } = await supabase.from('folders').select('*').eq('list_id', listId)
+  folders?.forEach((row) => state.applyRemoteFolder(rowToFolder(row)))
 }
