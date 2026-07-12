@@ -4,6 +4,17 @@ import { listToRow } from '../sync/mappers'
 
 const DEFAULT_LIST_ID = generateId()
 
+// If the user is already logged in, a brand-new list shouldn't stay
+// local-only until someone remembers to tap "Sincronizza" — dynamic import
+// avoids a module-load-time circular dependency with the store.
+function autoSyncIfLoggedIn(get, listId) {
+  if (get().session) {
+    import('../sync/upgradeListToCloud').then(({ upgradeListToCloud }) => {
+      upgradeListToCloud(listId).catch(() => {})
+    })
+  }
+}
+
 export const createListsSlice = (set, get) => ({
   lists: {
     [DEFAULT_LIST_ID]: {
@@ -42,6 +53,7 @@ export const createListsSlice = (set, get) => ({
       listOrder: [...state.listOrder, id],
       activeListId: id,
     }))
+    autoSyncIfLoggedIn(get, id)
     return id
   },
 
@@ -136,6 +148,7 @@ export const createListsSlice = (set, get) => ({
         activeListId: id,
       }
     })
+    autoSyncIfLoggedIn(get, id)
     return id
   },
 

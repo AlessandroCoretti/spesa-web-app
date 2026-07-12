@@ -1,9 +1,25 @@
 import { supabase, isSupabaseConfigured } from '../sync/supabaseClient'
 
+// Tracked at module scope (not in the store) so it survives independently of
+// re-renders and only fires once per "a session became available" moment,
+// not on every token refresh while already signed in.
+let hasAutoSyncedThisSession = false
+
 export const createAuthSlice = (set) => {
   if (isSupabaseConfigured) {
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ session })
+      if (session && !hasAutoSyncedThisSession) {
+        hasAutoSyncedThisSession = true
+        // Being logged in is enough to keep everything backed up — no need
+        // to remember to tap "Sincronizza" per list. Dynamic import avoids a
+        // module-load-time circular dependency with the store.
+        import('../sync/upgradeListToCloud').then(({ syncAllLocalListsToCloud }) => {
+          syncAllLocalListsToCloud()
+        })
+      } else if (!session) {
+        hasAutoSyncedThisSession = false
+      }
     })
   }
 

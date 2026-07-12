@@ -14,7 +14,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       strategies: 'generateSW',
-      includeAssets: ['favicon.svg', 'cover.webp'],
+      includeAssets: ['favicon.svg', 'cover.webp', 'apple-touch-icon.png'],
       manifest: {
         name: 'Your Lists',
         short_name: 'Your Lists',
