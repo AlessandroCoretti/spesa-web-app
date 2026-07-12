@@ -9,7 +9,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://192.168.1.16:5180/)",
       "Bash(sed -i \"s/localhost:5174/localhost:5180/\" verify.js)",
       "Bash(node debug.js)",
-      "Bash(node verify-share.js)"
+      "Bash(node verify-share.js)",
+      "Bash(node verify-settings.js)"
     ]
   }
 }

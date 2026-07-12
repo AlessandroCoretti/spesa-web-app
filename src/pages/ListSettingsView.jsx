@@ -3,11 +3,10 @@ import { useNavigate, useParams } from 'react-router'
 import { ChevronLeft, Download, Share2, Tag, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
 import { useInstallPrompt } from '../hooks/useInstallPrompt'
+import { detectPlatform } from '../utils/platform'
 import { CategoryManagerSheet } from '../components/categories/CategoryManagerSheet'
 import { ShareSheet } from '../components/sharing/ShareSheet'
 import { DeleteConfirmDialog } from '../components/items/DeleteConfirmDialog'
-
-const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
 
 export default function ListSettingsView() {
   const { listId } = useParams()
@@ -27,10 +26,17 @@ export default function ListSettingsView() {
   const handleInstallClick = () => {
     if (canInstall) {
       promptInstall()
-    } else if (isIos()) {
-      showToast('Su iPhone: tocca Condividi in Safari, poi "Aggiungi alla schermata Home"')
+      return
+    }
+    const { isIos, isFirefox, isMacSafari } = detectPlatform()
+    if (isIos) {
+      showToast('Tocca Condividi in Safari, poi "Aggiungi alla schermata Home"')
+    } else if (isMacSafari) {
+      showToast('Menu Safari → File → "Aggiungi al Dock"')
+    } else if (isFirefox) {
+      showToast('Firefox non supporta ancora l\'installazione: apri il link da Chrome, Edge o Safari')
     } else {
-      showToast('Apri questa pagina da Chrome o Edge per installarla')
+      showToast('Cerca l\'icona di installazione nella barra degli indirizzi del browser')
     }
   }
 
