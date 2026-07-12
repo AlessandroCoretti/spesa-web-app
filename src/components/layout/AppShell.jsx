@@ -8,9 +8,9 @@ import { InstallPrompt } from '../pwa/InstallPrompt'
 
 export function AppShell() {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col bg-blush-50/40">
+    <div className="mx-auto flex h-dvh max-w-md flex-col overflow-hidden bg-blush-50/40">
       <TopBar />
-      <main className="flex-1 pb-24">
+      <main className="flex-1 overflow-y-auto overscroll-contain">
         <Outlet />
       </main>
       <BottomNav />

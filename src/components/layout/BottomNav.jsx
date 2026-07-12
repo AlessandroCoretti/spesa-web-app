@@ -8,7 +8,7 @@ export function BottomNav() {
   const { listId } = useParams()
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md border-t border-blush-100 bg-white/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-sm">
+    <nav className="z-20 shrink-0 border-t border-blush-100 bg-white/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-sm">
       <ul className="flex items-stretch justify-between gap-1">
         {STATUSES.map((status) => {
           const meta = STATUS_META[status]

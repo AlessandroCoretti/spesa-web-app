@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { ChevronLeft, Share2, Tag, Trash2 } from 'lucide-react'
+import { ChevronLeft, Download, Share2, Tag, Trash2 } from 'lucide-react'
 import { useStore } from '../store'
+import { useInstallPrompt } from '../hooks/useInstallPrompt'
 import { CategoryManagerSheet } from '../components/categories/CategoryManagerSheet'
 import { ShareSheet } from '../components/sharing/ShareSheet'
 import { DeleteConfirmDialog } from '../components/items/DeleteConfirmDialog'
+
+const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
 
 export default function ListSettingsView() {
   const { listId } = useParams()
@@ -13,12 +16,23 @@ export default function ListSettingsView() {
   const listOrder = useStore((state) => state.listOrder)
   const deleteList = useStore((state) => state.deleteList)
   const showToast = useStore((state) => state.showToast)
+  const { canInstall, installed, promptInstall } = useInstallPrompt()
 
   const [showCategories, setShowCategories] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const canDelete = listOrder.length > 1
+
+  const handleInstallClick = () => {
+    if (canInstall) {
+      promptInstall()
+    } else if (isIos()) {
+      showToast('Su iPhone: tocca Condividi in Safari, poi "Aggiungi alla schermata Home"')
+    } else {
+      showToast('Apri questa pagina da Chrome o Edge per installarla')
+    }
+  }
 
   const handleDelete = () => {
     deleteList(listId);
@@ -59,6 +73,22 @@ export default function ListSettingsView() {
           <Share2 className="h-5 w-5 text-mint-500" />
           <span className="font-semibold text-ink">Condividi lista</span>
         </button>
+
+        {installed ? (
+          <div className="flex items-center gap-3 rounded-2xl bg-white/60 px-4 py-3.5 text-left">
+            <Download className="h-5 w-5 text-ink-soft" />
+            <span className="font-semibold text-ink-soft">App già installata</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleInstallClick}
+            className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+          >
+            <Download className="h-5 w-5 text-blush-500" />
+            <span className="font-semibold text-ink">Scarica l'app</span>
+          </button>
+        )}
 
         {canDelete && (
           <button

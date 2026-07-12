@@ -8,7 +8,7 @@ export function TopBar() {
   const openSheet = useStore((state) => state.openSheet)
 
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-blush-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-sm">
+    <header className="z-20 flex shrink-0 items-center justify-between gap-2 bg-blush-50/90 px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-sm">
       <button
         type="button"
         onClick={() => openSheet('list-switcher')}
