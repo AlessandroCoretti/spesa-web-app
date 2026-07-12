@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { ChevronLeft, Download, Share2, Tag, Trash2 } from 'lucide-react'
+import { ChevronLeft, Download, LogIn, LogOut, Share2, Tag, Trash2, UserX } from 'lucide-react'
 import { useStore } from '../store'
 import { useInstallPrompt } from '../hooks/useInstallPrompt'
 import { detectPlatform } from '../utils/platform'
+import { isSupabaseConfigured } from '../sync/supabaseClient'
 import { CategoryManagerSheet } from '../components/categories/CategoryManagerSheet'
 import { ShareSheet } from '../components/sharing/ShareSheet'
 import { DeleteConfirmDialog } from '../components/items/DeleteConfirmDialog'
@@ -17,9 +18,15 @@ export default function ListSettingsView() {
   const showToast = useStore((state) => state.showToast)
   const { canInstall, installed, promptInstall } = useInstallPrompt()
 
+  const session = useStore((state) => state.session)
+  const openSheet = useStore((state) => state.openSheet)
+  const signOut = useStore((state) => state.signOut)
+  const deleteAccount = useStore((state) => state.deleteAccount)
+
   const [showCategories, setShowCategories] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingAccountDelete, setConfirmingAccountDelete] = useState(false)
 
   const canDelete = listOrder.length > 1
 
@@ -45,6 +52,21 @@ export default function ListSettingsView() {
     const remaining = listOrder.filter((id) => id !== listId)
     showToast('Lista eliminata')
     navigate(`/list/${remaining[0]}/da_comprare`)
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    showToast('Hai effettuato il logout')
+  }
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount()
+      showToast('Account eliminato')
+      setConfirmingAccountDelete(false)
+    } catch {
+      showToast('Non siamo riusciti a eliminare l\'account, riprova')
+    }
   }
 
   return (
@@ -108,6 +130,45 @@ export default function ListSettingsView() {
         )}
       </div>
 
+      {isSupabaseConfigured && (
+        <div className="mt-6 flex flex-col gap-2.5 px-4">
+          <p className="px-1 text-sm font-bold uppercase tracking-wide text-ink-soft">Account</p>
+
+          {session ? (
+            <>
+              <div className="rounded-2xl bg-white/60 px-4 py-3.5 text-sm text-ink-soft">
+                {session.user.email}
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+              >
+                <LogOut className="h-5 w-5 text-ink-soft" />
+                <span className="font-semibold text-ink">Esci</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingAccountDelete(true)}
+                className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+              >
+                <UserX className="h-5 w-5 text-coral-500" />
+                <span className="font-semibold text-coral-600">Elimina account</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openSheet('login')}
+              className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-sm"
+            >
+              <LogIn className="h-5 w-5 text-blush-500" />
+              <span className="font-semibold text-ink">Accedi o crea un account</span>
+            </button>
+          )}
+        </div>
+      )}
+
       <CategoryManagerSheet open={showCategories} onClose={() => setShowCategories(false)} />
       <ShareSheet open={showShare} onClose={() => setShowShare(false)} />
       <DeleteConfirmDialog
@@ -115,6 +176,13 @@ export default function ListSettingsView() {
         itemName={list?.name}
         onCancel={() => setConfirmingDelete(false)}
         onConfirm={handleDelete}
+      />
+      <DeleteConfirmDialog
+        open={confirmingAccountDelete}
+        title="Eliminare il tuo account?"
+        description="Le liste di cui sei proprietario e tutti i loro dati verranno eliminati per sempre. Questa azione non può essere annullata."
+        onCancel={() => setConfirmingAccountDelete(false)}
+        onConfirm={handleDeleteAccount}
       />
     </div>
   )

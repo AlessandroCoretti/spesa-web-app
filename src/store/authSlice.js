@@ -26,5 +26,13 @@ export const createAuthSlice = (set) => {
       await supabase.auth.signOut()
       set({ session: null })
     },
+
+    deleteAccount: async () => {
+      if (!isSupabaseConfigured) return
+      const { error } = await supabase.rpc('delete_own_account')
+      if (error) throw error
+      await supabase.auth.signOut()
+      set({ session: null })
+    },
   }
 }

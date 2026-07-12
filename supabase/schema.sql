@@ -196,6 +196,26 @@ $$;
 grant execute on function accept_invite(text) to authenticated;
 
 -- ============================================================
+-- delete_own_account RPC: lets a signed-in user delete their own account.
+-- Deleting the auth.users row cascades through profiles -> lists (owned
+-- lists) -> categories/items/list_members, and out of any other lists'
+-- list_members rows, thanks to the "on delete cascade" foreign keys above.
+-- ============================================================
+
+create or replace function delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+grant execute on function delete_own_account() to authenticated;
+
+-- ============================================================
 -- Realtime: make sure the tables broadcast changes
 -- ============================================================
 

@@ -1,6 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion'
 
-export function DeleteConfirmDialog({ open, itemName, onCancel, onConfirm }) {
+export function DeleteConfirmDialog({
+  open,
+  itemName,
+  title,
+  description = 'Questa azione non può essere annullata.',
+  onCancel,
+  onConfirm,
+}) {
   return (
     <AnimatePresence>
       {open && (
@@ -19,8 +26,10 @@ export function DeleteConfirmDialog({ open, itemName, onCancel, onConfirm }) {
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
             className="relative z-10 w-full max-w-xs rounded-3xl bg-white p-5 text-center shadow-(--shadow-soft-lg)"
           >
-            <h3 className="font-heading text-lg font-semibold text-ink">Eliminare "{itemName}"?</h3>
-            <p className="mt-1 text-sm text-ink-soft">Questa azione non può essere annullata.</p>
+            <h3 className="font-heading text-lg font-semibold text-ink">
+              {title ?? `Eliminare "${itemName}"?`}
+            </h3>
+            <p className="mt-1 text-sm text-ink-soft">{description}</p>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
